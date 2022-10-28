@@ -3,16 +3,14 @@ from dbconfig import read_db_config
 import getpass
 from ManUser import *
 
-def register_reviewer(mycursor, words, icodes):
-
-    print(words)
+def register_reviewer(mycursor, first, last, icodes):
     
     q1 = "INSERT INTO Reviewer (ReviewerFirstName ReviewerLastName) VALUES (%s, %s)"
-    val = (words[2], words[3])
+    val = (first, last)
     try: 
         mycursor.execute(q1, val)
         id = mycursor.lastrowid
-        print(f"Thank you for registering. Your editor ID is {id}")
+        print(f"Thank you for registering. Your reviewer ID is {id}")
 
         for c in icodes:
             reviewer_icode_group = "INSERT INTO ReviewerICodeGroup (ReviewerId, ICodeId) VALUES (%s, %s)"
@@ -23,6 +21,29 @@ def register_reviewer(mycursor, words, icodes):
     except Error as err:
         print(err.msg)
         print(f"Error registering editor: {err}")
+
+def reviewer_login(mycursor, rev_id):
+    get_mans(mycursor, rev_id)
+    q1 = "SELECT a.ManuscriptId, Title, ManStatus FROM (SELECT ManuscriptId, Title FROM ReviewStatus) a LEFT JOIN (SELECT ManuscriptId, ManStatus FROM Manuscript) b ON a.ManuscriptId = b.ManuscriptId ORDER BY FIELD(ManStatus, \"Under Review\", \"Accepted\", \"Rejected\")"
+
+    try: 
+        mycursor.execute(q1)
+        res = mycursor.fetchall()
+        for x in res:
+            print(x)
+        
+    except Error as err:
+        print(f"Error logging in reviewer: {err}")
+
+def get_mans(mycursor, rev_id):
+    set_id = "SET @rev_id = %s"
+    vals = (rev_id, )
+
+    try:
+        mycursor.execute(set_id, vals)
+    except Error as err:
+        print(f"Error setting reviewer id: {err}")
+
 
 def man_review(mycursor, user, scores, man_id, decision):
     if user.get_id() == None:
