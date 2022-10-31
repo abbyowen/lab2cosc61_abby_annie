@@ -42,11 +42,15 @@ def login_author(mycursor, id):
     val = int(id)
     try:
         mycursor.execute(q, (val,))
-        row = dict(zip(mycursor.column_names, mycursor.fetchone()))
+        res = mycursor.fetchone()
+        row = dict(zip(mycursor.column_names, res))
+        
         print(f"WELCOME AUTHOR {row['AuthorFirstName']} {row['AuthorLastName']}".format(row))
+        return row
         
     except Error as err:
-        print(f"Error logging in author: {err}")
+        print(f"Error logging in author, no author found with this ID: {err}")
+        return None
 
 
 ########### check_author ###########

@@ -131,17 +131,19 @@ def read_input(user, input, mycursor, conn):
             id = words[1]
             t = get_user_type(mycursor, id)
             if t == "author":
-                login_author(mycursor, id)
-                user.set_id(id)
-                user.set_role("author")
+                res = login_author(mycursor, id)
+                if res != None:
+                    user.set_id(id)
+                    user.set_role("author")
             elif t == "reviewer":
-                reviewer_login(mycursor, id)
-                user.set_id(id)
-                user.set_role("reviewer")
+                res = reviewer_login(mycursor, id)
+                if res != None:
+                    user.set_id(id)
+                    user.set_role("reviewer")
             elif t == "editor":
-                id = login_editor(mycursor, words[1])
-                if id != "ERROR INPUT":
-                    user.set_id(int(words[1]))
+                res = login_editor(mycursor, words[1])
+                if res != None:
+                    user.set_id(id)
                     user.set_role("editor")
                     return id
             elif t == None:
@@ -196,11 +198,36 @@ def read_input(user, input, mycursor, conn):
             for x in res:
                 print(x)
     elif words[0] == "assign":
-        rev_id = words[1]
-        man_id = words[2]
-        assign(mycursor, user, rev_id, man_id)
+        if user.get_role() != "editor":
+            print("You do not have the proper permissions to assign a manuscript. Please log in wih a valid editor ID and try again.")
+        else:
+            rev_id = words[1]
+            man_id = words[2]
+            assign(mycursor, user, rev_id, man_id)
     
-    
+    elif words[0] == "schedule":
+        if user.get_role() != "editor":
+            print("You do not have the proper permissions to schedule a manuscript. Please log in with a valid editor ID and try again.")
+        else:
+            man_id = words[1]
+            issue_info = words[2]
+            i = issue_info.split("-")
+            pub_year = i[0]
+            pub_period = i[1]
+            schedule(mycursor, man_id, pub_period, pub_year)
+            conn.commit()
+    elif words[0] == "reset":
+        if user.get_role() != "editor":
+            print("You do not have the proper permissions to schedule a manuscript. Please log in with a valid editor ID and try again.")
+        else:
+            reset(mycursor) 
+            conn.commit()
+            sql_check_drop = "SELECT * FROM Manuscript"
+            mycursor.execute(sql_check_drop)
+            res = mycursor.fetchall()
+            for x in res:
+                print(x)
+
     else:
         print("UNKNOWN INPUT.")
     
