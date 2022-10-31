@@ -17,6 +17,7 @@ from shlex import split
 # TO REGISTER 
 # - register author <first name> <last name> <email> <affiliation>
 # - register reviewer <first name> <last name> <ICode1> <ICode2> <ICode3>
+# - register editor <first name> <last name>
 
 # TO LOGIN (Author, Reviewer, Editor)
 # - login <userid>
@@ -93,18 +94,21 @@ def get_user_type(mycursor, id):
 ###### read_input ######
 # Parses the user input for calling according author, editor, reviewer functions 
 def read_input(user, input, mycursor, conn):
+
+    # split input by space
     words = split(input)
-    # TODO: page numbers?
-    if words[0] == "register":
-        if words[1] == "author":
+
+    # register user
+    if words[0] == "register": 
+        # register author <first name> <last name> <email> <affiliation>
+        if words[1] == "author" and len(words) == 6:
             id = register_author(mycursor, words)
-            if id != "ERROR INPUT":
+            if id:
                 user.set_id(id)
                 user.set_role("author")
                 conn.commit()
-        elif words[1] == "reviewer":
-            if len(words) < 5 or len(words) > 7:
-                print("Error registering user: not enough ICodes supplied. Must be at least one and up to 3")
+        # register reviewer <first name> <last name> <ICode1> <ICode2> <ICode3>
+        elif words[1] == "reviewer" and (len(words) >= 5 and len(words) <= 7):
             first = words[2]
             last = words[3]
             icodes = []
@@ -113,44 +117,46 @@ def read_input(user, input, mycursor, conn):
                 icodes.append(words[i])
                 i += 1
             id = register_reviewer(mycursor, first, last, icodes)
-            user.set_id(id)
-            user.set_role("reviewer")
-            conn.commit()
-        elif words[1] == "editor":
+            if id: 
+                user.set_id(id)
+                user.set_role("reviewer")
+                conn.commit()
+        # register editor <first name> <last name>
+        elif words[1] == "editor" and len(words) == 4:
             name = words[2].split(" ")
             id = register_editor(mycursor, name[0], name[1])
-            user.set_id(id)
-            conn.commit()
-            
-        return id
+            if id: 
+                user.set_id(id)
+                user.set_role("editor")
+                conn.commit()
+        else:
+            print("Error registering user: invalid type or number of arugments")
     
+    # login user
     elif words[0] == "login":
+        # check number of arguments
         if len(words) != 2:
-            print("Please login by typing \"login <userid>\"")
+            print("Invalid number of arguments. Please login by typing \"login <userid>\"")
         else:
             id = words[1]
-            t = get_user_type(mycursor, id)
-            if t == "author":
+            type = get_user_type(mycursor, id)
+            if type == "author":
                 login_author(mycursor, id)
                 user.set_id(id)
                 user.set_role("author")
-            elif t == "reviewer":
+            elif type == "reviewer":
                 reviewer_login(mycursor, id)
                 user.set_id(id)
                 user.set_role("reviewer")
-            elif t == "editor":
-                id = login_editor(mycursor, words[1])
-                if id != "ERROR INPUT":
-                    user.set_id(int(words[1]))
+            elif type == "editor":
+                if login_editor(mycursor, words[1]):
+                    user.set_id(id)
                     user.set_role("editor")
-                    return id
-            elif t == None:
+            elif type == None:
                 print("No user with that ID. Please try again.")
     
     elif words[0] == "submit":
-        if user.get_role() != "author":
-            print("You do not have the proper permissions to submit a manuscript. Please log in using a valid author ID and try again.")
-        else:
+        if user.get_role() == "author":
             filename = words[-1]
             title = words[1]
             icode = words[3]
@@ -163,26 +169,40 @@ def read_input(user, input, mycursor, conn):
             id = submit_manuscript(user, mycursor, title, icode, pages, authors, filename)
             if id != None:
                 conn.commit()
+        else:
+            print("You are not an author or provided incorrect number of arguments.")
     
     elif words[0] == "status":
         if user.get_role() == "author":
             author_status(mycursor, user)
         elif user.get_role() == "editor":
-            editor_status(mycursor, user)
+            editor_status(mycursor)
         
 
-    elif words[0] == "accept" and user.get_role() == "reviewer":
-        man_id = words[1]
-        scores = [words[1], words[2], words[3], words[4]]
-        decision = 10
-        man_review(mycursor, user, scores, man_id, decision)
-    
-    elif words[0] == "reject" and user.get_role() == "reviewer":
-        man_id = words[1]
-        scores = [words[1], words[2], words[3], words[4]]
-        decision = 0
-        man_review(mycursor, user, scores, man_id, decision)
-        conn.commit()
+    elif words[0] == "accept":
+        if user.get_role() == "reviewer":
+            # role is reviewer
+            man_id = words[1]
+            scores = [words[1], words[2], words[3], words[4]]
+            decision = 10
+            man_review(mycursor, user, scores, man_id, decision)
+        elif user.get_role() == "editor":
+            # role is editor
+            editor_accept(mycursor, words[1])
+            conn.commit()
+
+    elif words[0] == "reject":
+        if user.get_role() == "reviewer":
+            # role is reviewer
+            man_id = words[1]
+            scores = [words[1], words[2], words[3], words[4]]
+            decision = 0
+            man_review(mycursor, user, scores, man_id, decision)
+            conn.commit()
+        elif user.get_role() == "editor":
+            # role is editor
+            editor_reject(mycursor, words[1])
+            conn.commit()
     
     elif words[0] == "resign":
         if user.get_role() != "reviewer":
@@ -195,16 +215,20 @@ def read_input(user, input, mycursor, conn):
             res = mycursor.fetchall()
             for x in res:
                 print(x)
-    elif words[0] == "assign":
+    
+    elif words[0] == "assign" and user.get_role() == "editor":
         rev_id = words[1]
         man_id = words[2]
-        assign(mycursor, user, rev_id, man_id)
+        assign(mycursor, rev_id, man_id)
+        conn.commit()
     
+    elif words[0] == "publish" and user.get_role() == "editor":
+        publish(mycursor, words[1])
+        conn.commit()
     
     else:
         print("UNKNOWN INPUT.")
-    
-
+            
 ###### run ######   
 # Main functionality, gets stdin and calls read_input to parse input    
 def run():

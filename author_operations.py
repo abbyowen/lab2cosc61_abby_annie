@@ -13,8 +13,6 @@ from ManUser import *
 ########### register_author ###########
 def register_author(mycursor, words):
 
-    print(words)
-
     insert_user = "INSERT INTO SysUser (UserType) VALUES (%s)"
     user_type = ("author", )
     
@@ -31,8 +29,8 @@ def register_author(mycursor, words):
         print(f"Thank you for registering. Your author ID is {user_id}")
         return user_id
     except Error as err:
-        print(err.msg)
         print(f"Error registering author: {err}")
+        return None
 
 
 ########### login_author ###########
