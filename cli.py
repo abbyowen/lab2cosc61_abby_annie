@@ -123,8 +123,7 @@ def read_input(user, input, mycursor, conn):
                 conn.commit()
         # register editor <first name> <last name>
         elif words[1] == "editor" and len(words) == 4:
-            name = words[2].split(" ")
-            id = register_editor(mycursor, name[0], name[1])
+            id = register_editor(mycursor, words[2], words[3])
             if id: 
                 user.set_id(id)
                 user.set_role("editor")
@@ -158,8 +157,8 @@ def read_input(user, input, mycursor, conn):
             elif t == None:
                 print("No user with that ID. Please try again.")
     
-    elif words[0] == "submit" and len(words) <= 8:
-        if user.get_role() == "author":
+    elif words[0] == "submit":
+        if user.get_role() == "author" and (4 <= len(words) <= 8):
             filename = words[-1]
             title = words[1]
             icode = words[3]
@@ -228,7 +227,7 @@ def read_input(user, input, mycursor, conn):
         if user.get_role() == "editor" and len(words) == 3:
             rev_id = words[1]
             man_id = words[2]
-            assign(mycursor, user, rev_id, man_id)
+            assign(mycursor, rev_id, man_id)
         else:
             print("You do not have the proper permissions to assign a manuscript or entered incorrect number of arguments.")
     

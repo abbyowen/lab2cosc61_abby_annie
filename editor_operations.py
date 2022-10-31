@@ -3,10 +3,7 @@
 # Authors: Abby Owen, Annie Revers
 # editor_operations.py - SQL commands for editor operations
 
-from cgi import test
-from mysql.connector import MySQLConnection, Error, errorcode, FieldType
-from dbconfig import read_db_config
-import getpass
+from mysql.connector import Error
 from ManUser import *
 from startup import create_tables, create_triggers, create_views
 
@@ -16,7 +13,7 @@ from startup import create_tables, create_triggers, create_views
 def register_editor(mycursor, firstname, lastname):
     try: 
         # insert user into the system
-        query_1 = "INSERT INTO SysUser (UserType) VALUES (%s)reg"
+        query_1 = "INSERT INTO SysUser (UserType) VALUES (%s)"
         values_1 = ("editor", )
         mycursor.execute(query_1, values_1)
         
@@ -200,7 +197,7 @@ def editor_accept(mycursor, manuscript_id):
 def editor_reject(mycursor, manuscript_id):
     try:    
         # update manuscript status to rejected
-        query_1 = "UPDATE Manuscript SET ManStatus = 'rejected' WHERE ManuscriptId = %s"
+        query_1 = "UPDATE Manuscript SET ManStatus = 'Rejected' WHERE ManuscriptId = %s"
         values_1 = (manuscript_id, )
         mycursor.execute(query_1, values_1)
 
@@ -212,6 +209,7 @@ def editor_reject(mycursor, manuscript_id):
         mycursor.execute(my_select2, vals4)
         res2 = mycursor.fetchone()
         print(res2)
+        print("Manuscript " + manuscript_id + " has been rejected.")
     except Error as err:
         print(f"Error setting manuscript stauts to rejected: {err}")
 
