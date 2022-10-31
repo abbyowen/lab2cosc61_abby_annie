@@ -1,3 +1,7 @@
+# COSC 61, Professor Palmer 
+# Authors: Abby Owen, Annie Revers
+# author_operations.py - SQL commands for author operations
+
 from mysql.connector import MySQLConnection, Error, errorcode, FieldType
 from dbconfig import read_db_config
 import getpass

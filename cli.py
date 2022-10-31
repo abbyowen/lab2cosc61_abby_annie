@@ -1,3 +1,7 @@
+# COSC 61, Professor Palmer 
+# Authors: Abby Owen, Annie Revers
+# cli.py - the main command line interface for our manuscript system
+
 from tempfile import TemporaryFile
 from mysql.connector import MySQLConnection, Error, errorcode, FieldType
 from dbconfig import read_db_config
