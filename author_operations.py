@@ -170,33 +170,27 @@ def submit_manuscript(user, mycursor, title, icode, authors, filename):
 
 ########### status ###########
 def author_status(mycursor, user):
-    if user.get_id() == None:
-        print("You do not have the proper permissions for this action. Please log in with you Author ID to submit a manuscript.")
-
-    else: 
-        # status_sql = "SELECT ManuscriptId, Title, DateUpdated, ManStatus FROM LeadAuthorManuscripts WHERE AuthorId = %s"
-        # val = (user.get_id(), )
+    try:    
         print("######### MANUSCRIPT STATUSES #########")
         statuses = ["Recieved", "Under Review", "Rejected", "Accepted", "Typesetting", "Ready", "Scheduled", "Published"]
         counts = {}
-        try:    
-            for status in statuses:
-                get_count = "SELECT COUNT(ManStatus) FROM LeadAuthorManuscripts WHERE AuthorId = %s AND ManStatus = %s"
-                vals = (user.get_id(), status)
-                mycursor.execute(get_count, vals)
-                res = mycursor.fetchone()[0]
-                counts[status] = res
-                
-            for c in counts: 
-                print(f"{c}: {counts[c]}")
-            # mycursor.execute(status_sql, val)
-            # res = mycursor.fetchall()
+        for status in statuses:
+            get_count = "SELECT COUNT(ManStatus) FROM LeadAuthorManuscripts WHERE AuthorId = %s AND ManStatus = %s"
+            vals = (user.get_id(), status)
+            mycursor.execute(get_count, vals)
+            res = mycursor.fetchone()[0]
+            counts[status] = res
             
-            # output = "Manuscript Statuses \n############## \n Recieved \n ############## \n"
-            # for x in res:
-                # print(x)
-        except Error as err:
-            print(f"Error in getting author manuscripts: {err}")
+        for c in counts: 
+            print(f"{c}: {counts[c]}")
+        # mycursor.execute(status_sql, val)
+        # res = mycursor.fetchall()
+        
+        # output = "Manuscript Statuses \n############## \n Recieved \n ############## \n"
+        # for x in res:
+            # print(x)
+    except Error as err:
+        print(f"Error in getting author manuscripts: {err}")
 
     
 

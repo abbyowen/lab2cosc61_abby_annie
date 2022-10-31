@@ -10,12 +10,19 @@ from ManUser import *
 ###### register_reviewer #######
 def register_reviewer(mycursor, first, last, icodes):
     
-    q1 = "INSERT INTO Reviewer (ReviewerFirstName ReviewerLastName) VALUES (%s, %s)"
-    val = (first, last)
     try: 
-        mycursor.execute(q1, val)
+        # insert user into the system
+        query_1 = "INSERT INTO SysUser (UserType) VALUES (%s)"
+        values_1 = ("reviewer", )
+        mycursor.execute(query_1, values_1)
+        
+        # print user id
         id = mycursor.lastrowid
-        print(f"Thank you for registering. Your reviewer ID is {id}")
+        print(f"Thank you for registering. Your reviewer ID is {id}.")
+        
+        q1 = "INSERT INTO Reviewer (ReviewerId, ReviewerFirstName, ReviewerLastName) VALUES (%s, %s, %s)"
+        val = (id, first, last)
+        mycursor.execute(q1, val)
 
         for c in icodes:
             reviewer_icode_group = "INSERT INTO ReviewerICodeGroup (ReviewerId, ICodeId) VALUES (%s, %s)"
@@ -94,7 +101,7 @@ def man_review(mycursor, user, scores, man_id, decision):
     
     
     accept_sql = "UPDATE Review SET A_Rating = %s, C_Rating = %s, M_Rating = %s, E_Rating = %s, Recommendation = %s WHERE ManuscriptId = %s AND ReviewerId = %s"
-    vals = (scores["A"], scores["C"], scores["M"], scores["E"], decision, man_id, user.get_id()) 
+    vals = (scores[0], scores[1], scores[2], scores[3], decision, man_id, user.get_id()) 
     try: 
         mycursor.execute(accept_sql, vals)
     except Error as err: 
