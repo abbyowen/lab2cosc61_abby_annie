@@ -55,7 +55,7 @@ CREATE TABLE 	Issue
     DateUpdated     datetime DEFAULT CURRENT_TIMESTAMP,
     ManStatus       varchar(45) DEFAULT "Recieved",
     StartingPage    numeric(3, 0) NULL,
-    PageCount       numeric(3, 0) NOT NULL,
+    PageCount       numeric(3, 0) NULL,
     ICodeId         int NULL,
     EditorId        int NULL,
     IssueId			int NULL,

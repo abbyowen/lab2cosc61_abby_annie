@@ -99,7 +99,7 @@ def submit_response(man_id, mycursor):
 # If they are not, add them.
 # FOR EACH AUTHOR: 
 # INSERT INTO AuthorGroup (ManuscriptId, AuthorId, OrderNum) VALUES (%s, %s, %s)
-def submit_manuscript(user, mycursor, title, icode, pages, authors, filename):
+def submit_manuscript(user, mycursor, title, icode, authors, filename):
     # Check permissions of user
     if user.get_id() == None:
         print("You do not have the proper permissions for this action. Please log in with you Author ID to submit a manuscript.")
@@ -107,8 +107,8 @@ def submit_manuscript(user, mycursor, title, icode, pages, authors, filename):
     
     
     # Insert the manuscript
-    insert_man_sql = "INSERT INTO Manuscript (Title, ICodeId, PageCount) VALUES (%s, %s, %s)"
-    vals = (title, icode, pages)
+    insert_man_sql = "INSERT INTO Manuscript (Title, ICodeId) VALUES (%s, %s)"
+    vals = (title, icode)
     man_id = None
     try:
         mycursor.execute(insert_man_sql, vals)

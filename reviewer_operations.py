@@ -7,6 +7,7 @@ from dbconfig import read_db_config
 import getpass
 from ManUser import *
 
+###### register_reviewer #######
 def register_reviewer(mycursor, first, last, icodes):
     
     q1 = "INSERT INTO Reviewer (ReviewerFirstName ReviewerLastName) VALUES (%s, %s)"
@@ -26,6 +27,7 @@ def register_reviewer(mycursor, first, last, icodes):
         print(f"Error registering reviewer: {err}")
         return None
 
+###### get_mans #######
 # sets sql variable to the current user
 def get_mans(mycursor, rev_id):
     set_id = "SET @rev_id = %s"
@@ -36,7 +38,7 @@ def get_mans(mycursor, rev_id):
     except Error as err:
         print(f"Error setting reviewer id: {err}")
 
-
+###### reviewer_login #######
 def reviewer_login(mycursor, rev_id):
     get_mans(mycursor, rev_id)
       
@@ -46,27 +48,13 @@ def reviewer_login(mycursor, rev_id):
         mycursor.execute(q0, (val,))
         row = dict(zip(mycursor.column_names, mycursor.fetchone()))
         print(f"WELCOME REVIEWER {row['ReviewerFirstName']} {row['ReviewerLastName']}".format(row))
-        q1 = "SELECT a.ManuscriptId, Title, ManStatus FROM (SELECT ManuscriptId, Title FROM ReviewStatus) a LEFT JOIN (SELECT ManuscriptId, ManStatus FROM Manuscript) b ON a.ManuscriptId = b.ManuscriptId ORDER BY FIELD(ManStatus, \"Under Review\", \"Accepted\", \"Rejected\")"
-        mycursor.execute(q1)
-        res = mycursor.fetchall()
-        for x in res:
-            print(x)
+        return row
         
     except Error as err:
         print(f"Error logging in reviewer: {err}")
+        return None
 
-
-# sets sql variable to the current user
-def get_mans(mycursor, rev_id):
-    set_id = "SET @rev_id = %s"
-    vals = (rev_id, )
-
-    try:
-        mycursor.execute(set_id, vals)
-    except Error as err:
-        print(f"Error setting reviewer id: {err}")
-
-
+###### reviewer_login #######
 def reviewer_login(mycursor, rev_id):
     get_mans(mycursor, rev_id)
       
@@ -87,7 +75,7 @@ def reviewer_login(mycursor, rev_id):
         print(f"Error logging in reviewer, no reviewer with that ID: {err}")
         return None
 
-
+###### man_review #######
 def man_review(mycursor, user, scores, man_id, decision):
     if user.get_id() == None:
         print("You do not have the proper permissions for this action. Please log in with you Author ID to submit a manuscript.")
@@ -112,7 +100,7 @@ def man_review(mycursor, user, scores, man_id, decision):
     except Error as err: 
         print(f"Error updating review: {err}")
 
-
+###### resign #######
 def resign(mycursor, user):
     id = user.get_id()
     delete_reviewer_sql = "DELETE FROM Reviewer WHERE ReviewerId = %s"

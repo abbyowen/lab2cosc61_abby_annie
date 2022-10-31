@@ -155,7 +155,7 @@ def read_input(user, input, mycursor, conn):
                 if res != None:
                     user.set_id(id)
                     user.set_role("editor")
-            elif type == None:
+            elif t == None:
                 print("No user with that ID. Please try again.")
     
     elif words[0] == "submit":
@@ -163,13 +163,12 @@ def read_input(user, input, mycursor, conn):
             filename = words[-1]
             title = words[1]
             icode = words[3]
-            pages = words[4]
             i = 5
             authors = []
             while i < len(words) - 1:
                 authors.append(words[i])
                 i += 1
-            id = submit_manuscript(user, mycursor, title, icode, pages, authors, filename)
+            id = submit_manuscript(user, mycursor, title, icode, authors, filename)
             if id != None:
                 conn.commit()
         else:
@@ -249,12 +248,15 @@ def read_input(user, input, mycursor, conn):
         else:
             reset(mycursor) 
             conn.commit()
-            sql_check_drop = "SELECT * FROM Manuscript"
-            mycursor.execute(sql_check_drop)
-            res = mycursor.fetchall()
-            for x in res:
-                print(x)
-
+            
+            # TEST IF THE TRIGGERS RERAN
+            test_insert = "INSERT INTO Manuscript (Title, ICodeId) VALUES (\"mooch tails\", 1)"
+            try:
+                mycursor.execute(test_insert)
+                res = mycursor.lastrowid
+                print(res)
+            except Error as err:
+                print(err)
     else:
         print("UNKNOWN INPUT.")
             
