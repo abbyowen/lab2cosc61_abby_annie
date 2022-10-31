@@ -97,6 +97,9 @@ def man_review(mycursor, user, scores, man_id, decision):
     vals = (scores["A"], scores["C"], scores["M"], scores["E"], decision, man_id, user.get_id()) 
     try: 
         mycursor.execute(accept_sql, vals)
+        check_new = "SELECT * FROM Review WHERE ManuscriptId = %s AND ReviewerId = %s"
+        mycursor.execute(check_new, val)
+        print(dict(zip(mycursor.column_names, mycursor.fetchone())))
     except Error as err: 
         print(f"Error updating review: {err}")
 

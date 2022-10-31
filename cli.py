@@ -190,7 +190,7 @@ def read_input(user, input, mycursor, conn):
         if user.get_role() == "reviewer" and len(words) == 6:
             # role is reviewer
             man_id = words[1]
-            scores = [words[1], words[2], words[3], words[4]]
+            scores = {"A": words[2], "C": words[3], "M": words[4], "E": words[5]}
             decision = 10
             man_review(mycursor, user, scores, man_id, decision)
             conn.commit()
@@ -206,7 +206,7 @@ def read_input(user, input, mycursor, conn):
         if user.get_role() == "reviewer" and len(words) == 6:
             # role is reviewer
             man_id = words[1]
-            scores = [words[1], words[2], words[3], words[4]]
+            scores = {"A": words[2], "C": words[3], "M": words[4], "E": words[5]}
             decision = 0
             man_review(mycursor, user, scores, man_id, decision)
             conn.commit()
