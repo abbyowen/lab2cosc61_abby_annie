@@ -192,6 +192,7 @@ def read_input(user, input, mycursor, conn):
             scores = [words[1], words[2], words[3], words[4]]
             decision = 10
             man_review(mycursor, user, scores, man_id, decision)
+            conn.commit()
         elif user.get_role() == "editor" and len(words) == 2:
             # role is editor
             editor_accept(mycursor, words[1])
@@ -218,11 +219,6 @@ def read_input(user, input, mycursor, conn):
         if user.get_role() == "reviewer" and len(words) == 1:
             resign(mycursor, user) 
             conn.commit()
-            check_reviewer = "SELECT * FROM Reviewer"
-            mycursor.execute(check_reviewer)
-            res = mycursor.fetchall()
-            for x in res:
-                print(x)
         else:
             print("You do not have the proper permissions to resign or provided incorrect number of arguments.")
                 
@@ -249,11 +245,13 @@ def read_input(user, input, mycursor, conn):
             man_id = words[1]
             issue_info = words[2]
             i = issue_info.split("-")
-            pub_year = i[0]
-            pub_period = i[1]
-            
-            schedule(mycursor, man_id, pub_period, pub_year)
-            conn.commit()
+            if len(i != 2):
+                print("Incorrect issue info. Please input the issue in the form <publication year>-<publication period>")
+            else:
+                pub_year = i[0]
+                pub_period = i[1]
+                schedule(mycursor, man_id, pub_period, pub_year)
+                conn.commit()
         else:
             print("You do not have the proper permissions to schedule a manuscript or entered incorrect number of arguments.")
     
@@ -263,7 +261,7 @@ def read_input(user, input, mycursor, conn):
             reset(mycursor) 
             conn.commit()
 
-            sql_check_drop = "SELECT * FROM Manuscript"
+            sql_check_drop = "SELECT * FROM Reviewer"
             mycursor.execute(sql_check_drop)
             res = mycursor.fetchall()
             for x in res:
@@ -274,6 +272,7 @@ def read_input(user, input, mycursor, conn):
                 mycursor.execute(test_insert)
                 res = mycursor.lastrowid
                 print(res)
+                conn.commit()
             except Error as err:
                 print(err)
         else:

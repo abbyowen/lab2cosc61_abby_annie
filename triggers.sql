@@ -10,7 +10,7 @@ DELIMITER $$
 CREATE TRIGGER after_manuscript_submit BEFORE INSERT 
 ON Manuscript
     FOR EACH ROW 
-		IF (SELECT COUNT(ICodeId) FROM ReviewerICodeGroup WHERE ICodeId = NEW.ICodeId < 3) THEN
+		IF (SELECT COUNT(ICodeId) FROM ReviewerICodeGroup WHERE ICodeId = NEW.ICodeId) < 3 THEN
              set @msg = concat('LAB2: Not enough reviewers for ICode id ', cast(NEW.ICodeId as char));
 			 signal sqlstate '45000' set message_text = @msg;
 		END IF; $$

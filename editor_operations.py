@@ -5,6 +5,7 @@
 
 from mysql.connector import Error
 from ManUser import *
+from startup import create_tables, create_triggers, create_views
 
 # TODO: File BLOBs for insert manuscript
 
@@ -116,31 +117,15 @@ def schedule(mycursor, manuscript_id, issue_period, issue_year):
 
 ########### reset ###########
 def reset(mycursor):
+  
+    create_tables(mycursor)
+    create_views(mycursor)
+    create_triggers(mycursor)
     try:
-        # run the tables.sql files, which drops and recreates all of our tables
-        f = open("tables.sql", "r")
-        query = "".join(f.readlines())
-
-        # go through each statement (delimited by a ; character)
-        for s in query.split(";"):
-            if len(s) > 0:
-                mycursor.execute(s + ";")
-        print("RESET COMPLETE: All tables dropped and recreated.")
-        # recreate the triggers for new inserts 
-        t = open("triggers.sql", "r")
-        trigger_query = "".join(t.readlines())
-
-        for s in trigger_query.split(";"):
-            if len(s) > 0:
-                print(s)
-                mycursor.execute(s + ";", multi=True)
-        
         # recreate the ICode table for new inserts
         query = "INSERT INTO ICode (InterestName) VALUES (\"ML\"), (\"english\"), (\"biology\"), (\"chemistry\"), (\"biology\"), (\"art history\"), (\"databases\"), (\"dartmouth\")"
-        mycursor.execute(query)
-        
-
-      
+        mycursor.execute(query)   
+        print("############RESET COMPLETE############")
     except Error as err:
         print(f"Error resetting system: {err}")
 
