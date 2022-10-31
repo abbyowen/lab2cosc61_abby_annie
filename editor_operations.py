@@ -1,6 +1,4 @@
-from mysql.connector import MySQLConnection, Error, errorcode, FieldType
-from dbconfig import read_db_config
-import getpass
+from mysql.connector import Error
 from ManUser import *
 
 # TODO: File BLOBs for insert manuscript
