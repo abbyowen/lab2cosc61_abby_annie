@@ -1,3 +1,7 @@
+# COSC 61, Professor Palmer 
+# Authors: Abby Owen, Annie Revers
+# author_operations.py - SQL commands for author operations
+
 from mysql.connector import MySQLConnection, Error, errorcode, FieldType
 from dbconfig import read_db_config
 import getpass
@@ -9,37 +13,39 @@ from ManUser import *
 ########### register_author ###########
 def register_author(mycursor, words):
 
-    print(words)
+
+    insert_user = "INSERT INTO SysUser (UserType) VALUES (%s)"
+    user_type = ("author", )
     
-    q1 = "INSERT INTO Author (AuthorFirstName, AuthorLastName, AuthorEmail, AuthorAffiliation) VALUES (%s, %s, %s, %s)"
-    val = (words[2], words[3], words[4], words[5])
+    
     try: 
+        mycursor.execute(insert_user, user_type)
+        user_id = mycursor.lastrowid
+
+        q1 = "INSERT INTO Author (AuthorId, AuthorFirstName, AuthorLastName, AuthorEmail, AuthorAffiliation) VALUES (%s, %s, %s, %s, %s)"
+        val = (user_id, words[2], words[3], words[4], words[5])
+        
         mycursor.execute(q1, val)
-        id = mycursor.lastrowid
-        print(f"Thank you for registering. Your author ID is {id}")
-        return id
+    
+        print(f"Thank you for registering. Your author ID is {user_id}")
+        return user_id
     except Error as err:
-        print(err.msg)
         print(f"Error registering author: {err}")
+        return None
 
 
 ########### login_author ###########
-def login_author(mycursor, words):
-    if len(words) != 3:
-        return "ERROR INPUT"
-    else:        
-        q = "SELECT * FROM Author WHERE AuthorId = (%s)"
-        val = int(words[2])
-        try:
-            mycursor.execute(q, (val,))
-            row = dict(zip(mycursor.column_names, mycursor.fetchone()))
-            print(f"WELCOME {row['AuthorFirstName']} {row['AuthorLastName']}".format(row))
+def login_author(mycursor, id):
             
+    q = "SELECT * FROM Author WHERE AuthorId = (%s)"
+    val = int(id)
+    try:
+        mycursor.execute(q, (val,))
+        row = dict(zip(mycursor.column_names, mycursor.fetchone()))
+        print(f"WELCOME AUTHOR {row['AuthorFirstName']} {row['AuthorLastName']}".format(row))
         
-            return row
-        except Error as err:
-            print(err)
-            return "ERROR INPUT"
+    except Error as err:
+        print(f"Error logging in author: {err}")
 
 
 ########### check_author ###########
@@ -90,7 +96,7 @@ def submit_response(man_id, mycursor):
 # If they are not, add them.
 # FOR EACH AUTHOR: 
 # INSERT INTO AuthorGroup (ManuscriptId, AuthorId, OrderNum) VALUES (%s, %s, %s)
-def submit_manuscript(user, mycursor, words, authors):
+def submit_manuscript(user, mycursor, title, icode, pages, authors, filename):
     # Check permissions of user
     if user.get_id() == None:
         print("You do not have the proper permissions for this action. Please log in with you Author ID to submit a manuscript.")
@@ -99,7 +105,7 @@ def submit_manuscript(user, mycursor, words, authors):
     
     # Insert the manuscript
     insert_man_sql = "INSERT INTO Manuscript (Title, ICodeId, PageCount) VALUES (%s, %s, %s)"
-    vals = (words[1], words[3], words[4])
+    vals = (title, icode, pages)
     man_id = None
     try:
         mycursor.execute(insert_man_sql, vals)
@@ -128,13 +134,18 @@ def submit_manuscript(user, mycursor, words, authors):
             co_id = check_author(mycursor, fname, lname, i)
 
             # if not, insert the author to the database
-            if co_id == None:
-                insert_co_sql = "INSERT INTO Author (AuthorFirstName, AuthorLastName) VALUES (%s, %s)"
-                vals = (fname, lname)
-                
-                try: 
-                    mycursor.execute(insert_co_sql, vals)
+            if co_id == None:              
+                try:              
+                    insert_user = "INSERT INTO SysUser (UserType) VALUES (%s)"
+                    u = ("author", )
+                    mycursor.execute(insert_user, u)
                     co_id = mycursor.lastrowid
+
+                    insert_co_sql = "INSERT INTO Author (AuthorId, AuthorFirstName, AuthorLastName) VALUES (%s, %s, %s)"
+                    vals = (co_id, fname, lname)
+                    
+                    mycursor.execute(insert_co_sql, vals)
+                    
                 except Error as err:
                     print(f"Error inserting co-author: {err}")
                     # delete manuscript?
@@ -155,7 +166,7 @@ def submit_manuscript(user, mycursor, words, authors):
 
 
 ########### status ###########
-def status(mycursor, user):
+def author_status(mycursor, user):
     if user.get_id() == None:
         print("You do not have the proper permissions for this action. Please log in with you Author ID to submit a manuscript.")
 
