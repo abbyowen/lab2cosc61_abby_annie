@@ -69,7 +69,8 @@ def db_close(conn, mycursor):
     conn.close()
     print("DONE")
 
-
+###### get_user_type ######
+# Get the type of the user based off of the universal system ID
 def get_user_type(mycursor, id):
     get_sql = "SELECT UserType FROM SysUser WHERE UniversalId = %s"
     vals = (id, )
@@ -77,16 +78,17 @@ def get_user_type(mycursor, id):
     try: 
         mycursor.execute(get_sql, vals)
         user_type = mycursor.fetchone()
+        if user_type == None:
+            return None
         return user_type[0]
     except Error as err:
         print(f"Error fetching user: {err}")
         return None
 
-
+###### read_input ######
+# Parses the user input for calling according author, editor, reviewer functions 
 def read_input(user, input, mycursor, conn):
-    
     words = split(input)
-    # TODO: checks for if user is in the database
     # TODO: page numbers?
     if words[0] == "register":
         if words[1] == "author":
@@ -160,18 +162,25 @@ def read_input(user, input, mycursor, conn):
         scores = [words[1], words[2], words[3], words[4]]
         decision = 0
         man_review(mycursor, user, scores, man_id, decision)
+        conn.commit()
     
     elif words[0] == "resign":
         if user.get_role() != "reviewer":
-            "You do not have the proper permissions to resign. Please log in using your reviewer ID and try again."
+            print("You do not have the proper permissions to resign. Please log in using your reviewer ID and try again.")
         else:
             resign(mycursor, user) 
+            conn.commit()
+            check_reviewer = "SELECT * FROM Reviewer"
+            mycursor.execute(check_reviewer)
+            res = mycursor.fetchall()
+            for x in res:
+                print(x)
     else:
         print("UNKNOWN INPUT.")
     
 
-        
-
+###### run ######   
+# Main functionality, gets stdin and calls read_input to parse input    
 def run():
     # Display start message
     on_startup()

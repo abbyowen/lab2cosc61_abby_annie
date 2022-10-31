@@ -4,7 +4,6 @@ import getpass
 from ManUser import *
 
 
-
 # TODO: File BLOBs for insert manuscript
 
 ########### register_author ###########
