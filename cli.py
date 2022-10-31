@@ -10,18 +10,16 @@ from shlex import split
 
 # INPUTS: 
 # TO REGISTER 
-# - register|author|<first name>|<last name>|<email>|<affiliation>
-# - register|reviewer|
+# - register author <first name> <last name> <email> <affiliation>
+# - register reviewer <first name> <last name> <ICode1> <ICode2> <ICode3>
 
-# TO LOGIN
-# - login <usertype> <userid>
+# TO LOGIN (Author, Reviewer, Editor)
+# - login <userid>
 
-# TO SUBMIT 
-# Delimit author list with a "-" character
-# - submit <title> <affiliation> <ICode> - <author2> <author3> <author4> - <filename>
+# TO SUBMIT A MANUSCRIPT (Author)
+# - submit <title> <Affiliation> <ICode> <author2> <author3> <author4> <filename>
 
 
-USER_ID = None
 ###### on_startup ######
 # Displays message when the program is started
 def on_startup():
@@ -72,14 +70,24 @@ def db_close(conn, mycursor):
     print("DONE")
 
 
+def get_user_type(mycursor, id):
+    get_sql = "SELECT UserType FROM SysUser WHERE UniversalId = %s"
+    vals = (id, )
+
+    try: 
+        mycursor.execute(get_sql, vals)
+        user_type = mycursor.fetchone()
+        return user_type[0]
+    except Error as err:
+        print(f"Error fetching user: {err}")
+        return None
 
 
 def read_input(user, input, mycursor, conn):
     
     words = split(input)
-    # TODO: if command line contains no keywords say I don't understand input
-    # TODO: universal ids
     # TODO: checks for if user is in the database
+    # TODO: page numbers?
     if words[0] == "register":
         if words[1] == "author":
             id = register_author(mycursor, words)
@@ -105,33 +113,41 @@ def read_input(user, input, mycursor, conn):
         return id
     
     elif words[0] == "login":
-        if words[1] == "author":
-            id = login_author(mycursor, words)
-            if id != "ERROR INPUT":
-                user.set_id(int(words[2]))
+        if len(words) != 2:
+            print("Please login by typing \"login <userid>\"")
+        else:
+            id = words[1]
+            t = get_user_type(mycursor, id)
+            if t == "author":
+                login_author(mycursor, id)
+                user.set_id(id)
                 user.set_role("author")
-                status(mycursor, user)
-        elif words[1] == "reviewer":
-            reviewer_login(mycursor, int(words[2]))
-            user.set_id(int(words[2]))
-            user.set_role("reviewer")
+            elif t == "reviewer":
+                reviewer_login(mycursor, id)
+                user.set_id(id)
+                user.set_role("reviewer")
+            elif t == None:
+                print("No user with that ID. Please try again.")
     
-    elif words[0] == "submit" and user.get_role() == "author":
-        filename = words[-1]
-        title = words[1]
-        icode = words[3]
-        pages = words[4]
-        i = 4
-        authors = []
-        while i < len(words) - 1:
-            authors.append(words[i])
-            i += 1
-        id = submit_manuscript(user, mycursor, title, icode, pages, authors)
-        if id != None:
-            conn.commit()
+    elif words[0] == "submit":
+        if user.get_role() != "author":
+            print("You do not have the proper permissions to submit a manuscript. Please log in using a valid author ID and try again.")
+        else:
+            filename = words[-1]
+            title = words[1]
+            icode = words[3]
+            pages = words[4]
+            i = 5
+            authors = []
+            while i < len(words) - 1:
+                authors.append(words[i])
+                i += 1
+            id = submit_manuscript(user, mycursor, title, icode, pages, authors, filename)
+            if id != None:
+                conn.commit()
     
-    elif words[0] == "status":
-        status(mycursor, user)
+    elif words[0] == "status" and user.get_role() == "author":
+        author_status(mycursor, user)
 
     elif words[0] == "accept" and user.get_role() == "reviewer":
         man_id = words[1]
@@ -145,13 +161,16 @@ def read_input(user, input, mycursor, conn):
         decision = 0
         man_review(mycursor, user, scores, man_id, decision)
     
+    elif words[0] == "resign":
+        if user.get_role() != "reviewer":
+            "You do not have the proper permissions to resign. Please log in using your reviewer ID and try again."
+        else:
+            resign(mycursor, user) 
     else:
         print("UNKNOWN INPUT.")
     
 
         
-            
-
 
 def run():
     # Display start message
@@ -171,6 +190,5 @@ def run():
     db_close(conn, mycursor)
         
    
-
 if __name__ == '__main__':
     run()
