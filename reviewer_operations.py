@@ -23,8 +23,38 @@ def register_reviewer(mycursor, first, last, icodes):
 
         return id
     except Error as err:
-        print(err.msg)
-        print(f"Error registering editor: {err}")
+        print(f"Error registering reviewer: {err}")
+        return None
+
+# sets sql variable to the current user
+def get_mans(mycursor, rev_id):
+    set_id = "SET @rev_id = %s"
+    vals = (rev_id, )
+
+    try:
+        mycursor.execute(set_id, vals)
+    except Error as err:
+        print(f"Error setting reviewer id: {err}")
+
+
+def reviewer_login(mycursor, rev_id):
+    get_mans(mycursor, rev_id)
+      
+    try: 
+        q0 = "SELECT * FROM Reviewer WHERE ReviewerId = (%s)"
+        val = int(rev_id)
+        mycursor.execute(q0, (val,))
+        row = dict(zip(mycursor.column_names, mycursor.fetchone()))
+        print(f"WELCOME REVIEWER {row['ReviewerFirstName']} {row['ReviewerLastName']}".format(row))
+        q1 = "SELECT a.ManuscriptId, Title, ManStatus FROM (SELECT ManuscriptId, Title FROM ReviewStatus) a LEFT JOIN (SELECT ManuscriptId, ManStatus FROM Manuscript) b ON a.ManuscriptId = b.ManuscriptId ORDER BY FIELD(ManStatus, \"Under Review\", \"Accepted\", \"Rejected\")"
+        mycursor.execute(q1)
+        res = mycursor.fetchall()
+        for x in res:
+            print(x)
+        
+    except Error as err:
+        print(f"Error logging in reviewer: {err}")
+
 
 # sets sql variable to the current user
 def get_mans(mycursor, rev_id):
