@@ -81,9 +81,11 @@ def reviewer_login(mycursor, rev_id):
         res = mycursor.fetchall()
         for x in res:
             print(x)
+        return row
         
     except Error as err:
-        print(f"Error logging in reviewer: {err}")
+        print(f"Error logging in reviewer, no reviewer with that ID: {err}")
+        return None
 
 
 def man_review(mycursor, user, scores, man_id, decision):
