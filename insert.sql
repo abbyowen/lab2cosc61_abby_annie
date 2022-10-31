@@ -365,6 +365,10 @@ VALUES
 INSERT INTO Review (ReviewerId, ManuscriptId, A_Rating, C_Rating, M_Rating, E_Rating, Recommendation, FeedbackDate)
 VALUES 
 	(69, 7, 2, 3, 4, 5, 0, CURRENT_TIMESTAMP);
+INSERT INTO Review (ReviewerId, ManuscriptId, A_Rating, C_Rating, M_Rating, E_Rating, Recommendation, FeedbackDate)
+VALUES 
+	(75, 2, 2, 3, 4, 5, 10, CURRENT_TIMESTAMP);
+
 
 ######################
 # TRIGGER 2 SETUP Inserts

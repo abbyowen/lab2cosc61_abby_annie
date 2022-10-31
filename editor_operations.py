@@ -1,4 +1,12 @@
-from mysql.connector import Error
+
+# COSC 61, Professor Palmer 
+# Authors: Abby Owen, Annie Revers
+# editor_operations.py - SQL commands for editor operations
+
+from cgi import test
+from mysql.connector import MySQLConnection, Error, errorcode, FieldType
+from dbconfig import read_db_config
+import getpass
 from ManUser import *
 
 # TODO: File BLOBs for insert manuscript
@@ -35,11 +43,9 @@ def login_editor(mycursor, id):
         values = int(id)
         mycursor.execute(query, (values,))
         row = dict(zip(mycursor.column_names, mycursor.fetchone()))
-        print(f"WELCOME EDITOR {row['EditorFirstName']} {row['EditorLastName']}".format(row))
-
-        
+      
         # print welcome message
-        print(f"WELCOME {row['EditorFirstName']} {row['EditorLastName']}".format(row))
+        print(f"WELCOME EDITOR {row['EditorFirstName']} {row['EditorLastName']}".format(row))
 
         return row
 
@@ -62,41 +68,45 @@ def editor_status(mycursor):
 
     except Error as err:
         print(f"Error getting manuscript statuses: {err}")
-    
-########### assign ###########
 
+########### schedule ###########
 def schedule(mycursor, manuscript_id, issue_period, issue_year):
     try: 
-        # check if ready 
+        # check if status is ready, if not reject schedule
         ready_sql = "SELECT ManStatus, PageCount FROM Manuscript WHERE ManuscriptId = %s"
         val = (manuscript_id, )
         mycursor.execute(ready_sql, val)
         res = mycursor.fetchone()
+        # get status of the manuscript and number of pages
         status = res[0]
         page = res[1]
         if status != "Ready":
             print("You cannot schedule a manuscript that is not in the \"Ready\" status.")
         else:
-            # get issue id 
+            # get issue id based off of the publication year and period number
             get_issue_id_sql = "SELECT IssueId FROM Issue WHERE PublicationYear = %s AND PeriodNumber = %s"
             issue_info = (issue_year, issue_period)
             mycursor.execute(get_issue_id_sql, issue_info)
             
+            # get the issue id from the result
             res_issue_id = mycursor.fetchone()
             if res_issue_id == None:
                 print("There is not issue with this publication year and publication period.")
             else:   
+                # determine if the manuscript is full or not, or if adding this manuscript would make it overfill
+                # if the number of pages in this manuscript plus the number of pages in the issue would overfill the issue
                 issue_id = res_issue_id[0]   
-
-
                 get_pages_sql = "SELECT PageCount FROM Issue WHERE IssueId = %s"
                 issue = (issue_id, )
                 mycursor.execute(get_pages_sql, issue)
                 r = mycursor.fetchone()
                 total_pages = r[0]
-                if total_pages + page > 100:
+                # check the new page count
+                if total_pages + page >= 100:
                     print("You cannot add this manuscript to this issue as doing so would result in an overfilled manuscript.")
+                # add if the total pages will still be below 100
                 else:
+                    # update the manuscript to include the new issue id, the new status of scheduled, and the starting page which was the previous ending page of the issue
                     update_manuscript_sql = "UPDATE Manuscript SET IssueId = %s, StartingPage = %s, ManStatus = %s WHERE ManuscriptId = %s"
                     update_info = (issue_id, total_pages + 1, "Scheduled", manuscript_id)
                     mycursor.execute(update_manuscript_sql, update_info)
@@ -107,21 +117,37 @@ def schedule(mycursor, manuscript_id, issue_period, issue_year):
     except Error as err: 
         print(f"Error scheduling manuscript: {err}")
 
+########### reset ###########
 def reset(mycursor):
     try:
+        # run the tables.sql files, which drops and recreates all of our tables
         f = open("tables.sql", "r")
         query = "".join(f.readlines())
 
-        for statement in query.split(";"):
-            if len(statement) > 0:
-                mycursor.execute(statement + ";")
+        # go through each statement (delimited by a ; character)
+        for s in query.split(";"):
+            if len(s) > 0:
+                mycursor.execute(s + ";")
         print("RESET COMPLETE: All tables dropped and recreated.")
+        # recreate the triggers for new inserts 
+        t = open("triggers.sql", "r")
+        trigger_query = "".join(t.readlines())
 
+        for s in trigger_query.split(";"):
+            if len(s) > 0:
+                print(s)
+                mycursor.execute(s + ";", multi=True)
         
+        # recreate the ICode table for new inserts
+        query = "INSERT INTO ICode (InterestName) VALUES (\"ML\"), (\"english\"), (\"biology\"), (\"chemistry\"), (\"biology\"), (\"art history\"), (\"databases\"), (\"dartmouth\")"
+        mycursor.execute(query)
+        
+
+      
     except Error as err:
         print(f"Error resetting system: {err}")
 
-
+########### assign ###########
 def assign(mycursor, reviewer_id, manuscript_id):
     try:    
         # insert user into the review table
@@ -162,18 +188,26 @@ def assign(mycursor, reviewer_id, manuscript_id):
 ########### editor_accept ###########
 def editor_accept(mycursor, manuscript_id):
     try:    
-        # update manuscript status to accepted
-        query_1 = "UPDATE Manuscript SET ManStatus = 'accepted' WHERE ManuscriptId = %s"
-        values_1 = (manuscript_id, )
-        mycursor.execute(query_1, values_1)
 
-        # TEST CODE
-        # print updated manuscript
-        my_select2 = "SELECT * FROM Manuscript WHERE ManuscriptId = (%s)"
-        vals4 = (manuscript_id,)
-        mycursor.execute(my_select2, vals4)
-        res2 = mycursor.fetchone()
-        print(res2)
+        check_review_count_sql = "SELECT COUNT(*) FROM Review WHERE ManuscriptId = %s AND A_Rating IS NOT NULL AND C_Rating IS NOT NULL AND M_Rating IS NOT NULL AND E_Rating IS NOT NULL AND Recommendation IS NOT NULL"
+        check_vals = (manuscript_id, )
+        mycursor.execute(check_review_count_sql, check_vals)
+        res = mycursor.fetchone()
+        if res[0] < 3:
+            print("Not enough reviews on this manuscript to accept. Must have at least 3.")
+        else:
+            # update manuscript status to accepted
+            query_1 = "UPDATE Manuscript SET ManStatus = 'Accepted' WHERE ManuscriptId = %s"
+            values_1 = (manuscript_id, )
+            mycursor.execute(query_1, values_1)
+
+            # TEST CODE
+            # print updated manuscript
+            my_select2 = "SELECT * FROM Manuscript WHERE ManuscriptId = (%s)"
+            vals4 = (manuscript_id,)
+            mycursor.execute(my_select2, vals4)
+            res2 = mycursor.fetchone()
+            print(f"Manuscript {manuscript_id} has been Accepted! Now moving to the Typesetting and Ready statuses.")
     except Error as err:
         print(f"Error updating manuscript status to accepted: {err}")
 
