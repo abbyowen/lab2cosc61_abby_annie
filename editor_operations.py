@@ -37,11 +37,9 @@ def login_editor(mycursor, id):
         values = int(id)
         mycursor.execute(query, (values,))
         row = dict(zip(mycursor.column_names, mycursor.fetchone()))
-        print(f"WELCOME EDITOR {row['EditorFirstName']} {row['EditorLastName']}".format(row))
-
-        
+      
         # print welcome message
-        print(f"WELCOME {row['EditorFirstName']} {row['EditorLastName']}".format(row))
+        print(f"WELCOME EDITOR{row['EditorFirstName']} {row['EditorLastName']}".format(row))
 
         return row
 
