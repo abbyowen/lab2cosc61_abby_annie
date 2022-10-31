@@ -9,6 +9,7 @@ import getpass
 import sys
 from author_operations import *
 from reviewer_operations import *
+from editor_operations import * 
 from ManUser import * 
 from shlex import split
 
@@ -115,6 +116,11 @@ def read_input(user, input, mycursor, conn):
             user.set_id(id)
             user.set_role("reviewer")
             conn.commit()
+        elif words[1] == "editor":
+            name = words[2].split(" ")
+            id = register_editor(mycursor, name[0], name[1])
+            user.set_id(id)
+            conn.commit()
             
         return id
     
@@ -132,6 +138,12 @@ def read_input(user, input, mycursor, conn):
                 reviewer_login(mycursor, id)
                 user.set_id(id)
                 user.set_role("reviewer")
+            elif t == "editor":
+                id = login_editor(mycursor, words[1])
+                if id != "ERROR INPUT":
+                    user.set_id(int(words[1]))
+                    user.set_role("editor")
+                    return id
             elif t == None:
                 print("No user with that ID. Please try again.")
     
@@ -152,8 +164,12 @@ def read_input(user, input, mycursor, conn):
             if id != None:
                 conn.commit()
     
-    elif words[0] == "status" and user.get_role() == "author":
-        author_status(mycursor, user)
+    elif words[0] == "status":
+        if user.get_role() == "author":
+            author_status(mycursor, user)
+        elif user.get_role() == "editor":
+            editor_status(mycursor, user)
+        
 
     elif words[0] == "accept" and user.get_role() == "reviewer":
         man_id = words[1]
@@ -179,6 +195,12 @@ def read_input(user, input, mycursor, conn):
             res = mycursor.fetchall()
             for x in res:
                 print(x)
+    elif words[0] == "assign":
+        rev_id = words[1]
+        man_id = words[2]
+        assign(mycursor, user, rev_id, man_id)
+    
+    
     else:
         print("UNKNOWN INPUT.")
     
