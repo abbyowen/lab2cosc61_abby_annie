@@ -2,7 +2,6 @@
 # Authors: Abby Owen, Annie Revers
 # cli.py - the main command line interface for our manuscript system
 
-from itertools import combinations
 from tempfile import TemporaryFile
 from mysql.connector import MySQLConnection, Error, errorcode, FieldType
 from dbconfig import read_db_config
@@ -229,8 +228,7 @@ def read_input(user, input, mycursor, conn):
     
     else:
         print("UNKNOWN INPUT.")
-    
-
+            
 ###### run ######   
 # Main functionality, gets stdin and calls read_input to parse input    
 def run():

@@ -13,7 +13,6 @@ from ManUser import *
 ########### register_author ###########
 def register_author(mycursor, words):
 
-
     insert_user = "INSERT INTO SysUser (UserType) VALUES (%s)"
     user_type = ("author", )
     
