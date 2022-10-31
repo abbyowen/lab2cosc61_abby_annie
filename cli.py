@@ -158,7 +158,7 @@ def read_input(user, input, mycursor, conn):
             elif t == None:
                 print("No user with that ID. Please try again.")
     
-    elif words[0] == "submit":
+    elif words[0] == "submit" and len(words) <= 8:
         if user.get_role() == "author":
             filename = words[-1]
             title = words[1]
@@ -175,41 +175,48 @@ def read_input(user, input, mycursor, conn):
             print("You are not an author or provided incorrect number of arguments.")
     
     elif words[0] == "status":
-        if user.get_role() == "author":
-            author_status(mycursor, user)
-        elif user.get_role() == "editor":
-            editor_status(mycursor)
-        
+        # check number of arguments
+        if len(words) == 1:
+            # check role
+            if user.get_role() == "author":
+                author_status(mycursor, user)
+            elif user.get_role() == "editor":
+                editor_status(mycursor)
+        else:
+            print("Invalid number of arguments. Please type \"status\" to check your status.")
 
     elif words[0] == "accept":
-        if user.get_role() == "reviewer":
+        # check role and number of arguments
+        if user.get_role() == "reviewer" and len(words) == 6:
             # role is reviewer
             man_id = words[1]
             scores = [words[1], words[2], words[3], words[4]]
             decision = 10
             man_review(mycursor, user, scores, man_id, decision)
-        elif user.get_role() == "editor":
+        elif user.get_role() == "editor" and len(words) == 2:
             # role is editor
             editor_accept(mycursor, words[1])
             conn.commit()
+        else:
+            print("Incorrect role or number of arguments.")
 
     elif words[0] == "reject":
-        if user.get_role() == "reviewer":
+        #  check role and number of arguments
+        if user.get_role() == "reviewer" and len(words) == 6:
             # role is reviewer
             man_id = words[1]
             scores = [words[1], words[2], words[3], words[4]]
             decision = 0
             man_review(mycursor, user, scores, man_id, decision)
             conn.commit()
-        elif user.get_role() == "editor":
+        elif user.get_role() == "editor" and len(words) == 2:
             # role is editor
             editor_reject(mycursor, words[1])
             conn.commit()
     
     elif words[0] == "resign":
-        if user.get_role() != "reviewer":
-            print("You do not have the proper permissions to resign. Please log in using your reviewer ID and try again.")
-        else:
+        # check role
+        if user.get_role() == "reviewer" and len(words) == 1:
             resign(mycursor, user) 
             conn.commit()
             check_reviewer = "SELECT * FROM Reviewer"
@@ -217,24 +224,29 @@ def read_input(user, input, mycursor, conn):
             res = mycursor.fetchall()
             for x in res:
                 print(x)
+        else:
+            print("You do not have the proper permissions to resign or provided incorrect number of arguments.")
                 
     elif words[0] == "assign":
-        if user.get_role() != "editor":
-            print("You do not have the proper permissions to assign a manuscript. Please log in wih a valid editor ID and try again.")
-        else:
+        # check role and number of arguments
+        if user.get_role() == "editor" and len(words) == 3:
             rev_id = words[1]
             man_id = words[2]
             assign(mycursor, user, rev_id, man_id)
-    
-    elif words[0] == "publish" and user.get_role() == "editor":
-        publish(mycursor, words[1])
-        conn.commit()
-
-    
-    elif words[0] == "schedule":
-        if user.get_role() != "editor":
-            print("You do not have the proper permissions to schedule a manuscript. Please log in with a valid editor ID and try again.")
         else:
+            print("You do not have the proper permissions to assign a manuscript or entered incorrect number of arguments.")
+    
+    elif words[0] == "publish":
+        # check role and number of arguments
+        if user.get_role() == "editor" and len(words) == 2:
+            publish(mycursor, words[1])
+            conn.commit()
+        else:
+            print("You do not have the proper permissions to publish a manuscript or entered incorrect number of arguments.")
+
+    elif words[0] == "schedule":
+        # check role and number of arguments
+        if user.get_role() == "editor" and len(words) == 3:
             man_id = words[1]
             issue_info = words[2]
             i = issue_info.split("-")
@@ -242,13 +254,20 @@ def read_input(user, input, mycursor, conn):
             pub_period = i[1]
             schedule(mycursor, man_id, pub_period, pub_year)
             conn.commit()
-    elif words[0] == "reset":
-        if user.get_role() != "editor":
-            print("You do not have the proper permissions to schedule a manuscript. Please log in with a valid editor ID and try again.")
         else:
+            print("You do not have the proper permissions to schedule a manuscript or entered incorrect number of arguments.")
+    
+    elif words[0] == "reset":
+        # check role and number of arguments
+        if user.get_role() == "editor" and len(words) == 1:
             reset(mycursor) 
             conn.commit()
-            
+
+            sql_check_drop = "SELECT * FROM Manuscript"
+            mycursor.execute(sql_check_drop)
+            res = mycursor.fetchall()
+            for x in res:
+                print(x)
             # TEST IF THE TRIGGERS RERAN
             test_insert = "INSERT INTO Manuscript (Title, ICodeId) VALUES (\"mooch tails\", 1)"
             try:
@@ -257,6 +276,11 @@ def read_input(user, input, mycursor, conn):
                 print(res)
             except Error as err:
                 print(err)
+        else:
+            print("You do not have the proper permissions to reset the database or entered incorrect number of arguments.")
+        
+ 
+
     else:
         print("UNKNOWN INPUT.")
             

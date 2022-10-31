@@ -1,3 +1,4 @@
+
 # COSC 61, Professor Palmer 
 # Authors: Abby Owen, Annie Revers
 # editor_operations.py - SQL commands for editor operations
